@@ -1,10 +1,76 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "@socket.io/component-emitter";
 
-const Tablero = () => {
+type TMensaje = {
+  body: string;
+  from: string;
+};
+
+type appProps = {
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+};
+
+const Tablero = ({ socket }: appProps) => {
   const [isOn, setIsOn] = useState(false);
+  const [tablero, setTablero] = useState(Array(9).fill(""));
+  const [isXTurn, setIsXTurn] = useState(true);
+  const [mensajes, setMensajes] = useState<TMensaje[]>([]);
+  const [mensaje, setMensaje] = useState("");
+
+
+  useEffect(() => {
+    socket.on("tableroCliente", (data) => {
+      console.log("tableroCliente",data)
+      if(data.includes('x','y')){
+       //setTablero(data)
+       console.log('Holola')
+      }
+    });
+
+    return () => {
+      socket.off("tableroCliente");
+    };
+  }, []);
+
+  useEffect(() => {
+      socket.emit("tableroServidor", tablero);
+  }, [tablero]);
+
+
+  const handleCellClick = (index: number) => {
+    if (tablero[index] !== "") return;
+
+    const newTablero = [...tablero];
+    newTablero[index] = isXTurn ? "x" : "o"; // Asigna "x" o "o" según el turno
+    setTablero(newTablero);
+    setIsXTurn(!isXTurn); // Cambia el turno
+
+    setIsOn(!isOn);
+  };
+
+  const validarGanador = useMemo(() => {
+    if (tablero[0] === tablero[1] && tablero[1] === tablero[2]) {
+      console.log("Gano", tablero[0]);
+      return true;
+    }
+  }, [tablero]);
+
+  console.log(validarGanador);
 
   const toggleSwitch = () => {
     setIsOn(!isOn);
+  };
+
+  const enviarMensaje = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    const newMessaje = {
+      body: mensaje,
+      from: "Me",
+    };
+    setMensajes([...mensajes, newMessaje]);
   };
 
   return (
@@ -20,15 +86,15 @@ const Tablero = () => {
         {/* Tablero */}
         <div className="col-span-2 grid grid-cols-[1fr,0.5fr] gap-4 h-full">
           <div className="bg-white grid grid-cols-3 grid-rows-3 gap-3">
-            <div className="bg-[url('/o.png')] bg-no-repeat bg-center bg-contain bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-[url('/x.png')] bg-no-repeat bg-center bg-contain bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
-            <div className="bg-dark-blue w-auto h-auto"></div>
+            {tablero.map((cell, index) => (
+              <div
+                key={index}
+                onClick={() => handleCellClick(index)}
+                className={`bg-no-repeat bg-center bg-contain bg-dark-blue w-auto h-auto 
+                ${cell === "x" ? "bg-[url('/x.png')]" : ""} 
+                ${cell === "o" ? "bg-[url('/o.png')]" : ""}`}
+              ></div>
+            ))}
           </div>
           {/* Switch */}
           <div className="flex items-center justify-center">
@@ -65,14 +131,37 @@ const Tablero = () => {
 
       {/* Chat */}
       <div className="bg-Brown bg-opacity-85 h-full grid grid-rows-[auto,1fr,auto]">
-        <div className="bg-Brown-Titulo h-16 text-white font-bold text-xl flex items-center pl-7 ">
+        <div className="bg-Brown-Titulo h-16 text-white font-bold text-xl flex items-center pl-7">
           Deafmute
         </div>
-        <div>chat</div>
-        <div className="bg-white h-16 flex items-center justify-between px-5">
-          <input type="text" />
-          <img className="justify-end" src="/enviar.png" alt="" />
+        <div className="overflow-y-auto max-h-98">
+          <ul>
+            {mensajes.map((mensaje, index) => (
+              <li
+                key={index}
+                className="p-2 m-5 bg-Rose-Send rounded text-white text-xl table ml-auto"
+              >
+                {mensaje.body}
+              </li>
+            ))}
+          </ul>
         </div>
+        <form>
+          <div className="bg-white h-16 flex items-center justify-between px-5">
+            <input
+              type="text"
+              onChange={(e) => setMensaje(e.target.value)}
+              className="h-4/6 w-full mx-2 my-2 text-xl"
+            />
+            <button type="submit" onClick={enviarMensaje}>
+              <img
+                src="/enviar.png"
+                alt="Imagen del botón"
+                className="w-6 h-6"
+              />
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
