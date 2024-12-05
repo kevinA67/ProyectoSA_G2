@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Socket } from "socket.io-client";
-import { DefaultEventsMap } from "@socket.io/component-emitter";
-
+// import { Socket } from "socket.io-client";
+// import { DefaultEventsMap } from "@socket.io/component-emitter";
+import { io } from "socket.io-client";
 type TMensaje = {
   body: string;
   from: string;
 };
 
-type appProps = {
-  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-};
+// type appProps = {
+//   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+// };
 
-const Tablero = ({ socket }: appProps) => {
+const Tablero = () => {
+  const socket = io("http://localhost:5000");
   const [isOn, setIsOn] = useState(false);
   const [tablero, setTablero] = useState(Array(9).fill(""));
   const [isXTurn, setIsXTurn] = useState(true);
@@ -72,7 +73,7 @@ const Tablero = ({ socket }: appProps) => {
     };
     setMensajes([...mensajes, newMessaje]);
   };
-
+  console.log("entro")
   return (
     <div className="grid grid-cols-3 gap-4 m-4 items-center h-full">
       <div className="bg-Brown p-4 col-span-2 grid grid-cols-2 grid-rows-[auto,1fr,auto] gap-5 h-full">
