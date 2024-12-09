@@ -1,63 +1,96 @@
 import { useEffect, useMemo, useState } from "react";
-// import { Socket } from "socket.io-client";
-// import { DefaultEventsMap } from "@socket.io/component-emitter";
-import { io } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "@socket.io/component-emitter";
+
 type TMensaje = {
   body: string;
   from: string;
 };
 
-// type appProps = {
-//   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-// };
+type appProps = {
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+};
 
-const Tablero = () => {
-  const socket = io("http://localhost:5000");
+const Tablero = ({ socket }: appProps) => {
   const [isOn, setIsOn] = useState(false);
   const [tablero, setTablero] = useState(Array(9).fill(""));
   const [isXTurn, setIsXTurn] = useState(true);
   const [mensajes, setMensajes] = useState<TMensaje[]>([]);
   const [mensaje, setMensaje] = useState("");
-
+  const [enviar, setEnviar] = useState(false);
+  const [bloqueo, setBloqueo] = useState(true);
 
   useEffect(() => {
-    socket.on("tableroCliente", (data) => {
-      console.log("tableroCliente",data)
-      if(data.includes('x','y')){
-       //setTablero(data)
-       console.log('Holola')
-      }
+    socket.on("tableroCliente", (response) => {
+      const { data, turno } = response;
+      console.log('data',data)
+      setEnviar(false);
+      setTablero(data);
+      setBloqueo(true);
+      setIsXTurn(!turno);
+    });
+
+    socket.on("mensajeCliente", (data: string) => {
+      console.log("cliente", data);
+      const newMessaje = {
+        body: data,
+        from: "",
+      };
+      setMensajes((state) => [...state, newMessaje]);
     });
 
     return () => {
       socket.off("tableroCliente");
+      socket.off("mensajeCliente");
     };
   }, []);
 
   useEffect(() => {
-      socket.emit("tableroServidor", tablero);
-  }, [tablero]);
-
-
-  const handleCellClick = (index: number) => {
-    if (tablero[index] !== "") return;
-
-    const newTablero = [...tablero];
-    newTablero[index] = isXTurn ? "x" : "o"; // Asigna "x" o "o" según el turno
-    setTablero(newTablero);
-    setIsXTurn(!isXTurn); // Cambia el turno
-
-    setIsOn(!isOn);
-  };
-
-  const validarGanador = useMemo(() => {
-    if (tablero[0] === tablero[1] && tablero[1] === tablero[2]) {
-      console.log("Gano", tablero[0]);
-      return true;
+    if (enviar) {
+      socket.emit("tableroServidor",  { tablero, isXTurn });
+      setBloqueo(!bloqueo);
     }
   }, [tablero]);
 
-  console.log(validarGanador);
+  const handleCellClick = (index: number) => {
+    if (tablero[index] !== "") return;
+    console.log('sd',tablero[index])
+    const newTablero = [...tablero];
+    newTablero[index] = isXTurn ? "x" : "o"; // Asigna "x" o "o" según el turno
+    setTablero(newTablero);
+    setIsOn(!isOn);
+    setEnviar(true);
+  };
+
+  const validarGanador = useMemo(() => {
+    const combinacionesGanadoras = [
+      // Filas
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      // Columnas
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      // Diagonales
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+
+    for (const combinacion of combinacionesGanadoras) {
+      const [a, b, c] = combinacion;
+      if (
+        tablero[a] !== "" && 
+        tablero[a] === tablero[b] &&
+        tablero[a] === tablero[c]
+      ) {
+        console.log("Ganador:", tablero[a]);
+        return tablero[a];
+      }
+    }
+  }, [tablero]);
+
+  //console.log(validarGanador);
 
   const toggleSwitch = () => {
     setIsOn(!isOn);
@@ -67,13 +100,17 @@ const Tablero = () => {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const newMessaje = {
-      body: mensaje,
-      from: "Me",
-    };
-    setMensajes([...mensajes, newMessaje]);
+    if (mensaje !== "") {
+      const newMessaje = {
+        body: mensaje,
+        from: "Me",
+      };
+      setMensajes([...mensajes, newMessaje]);
+      socket.emit("mensaje", newMessaje.body);
+      setMensaje("");
+    }
   };
-  console.log("entro")
+
   return (
     <div className="grid grid-cols-3 gap-4 m-4 items-center h-full">
       <div className="bg-Brown p-4 col-span-2 grid grid-cols-2 grid-rows-[auto,1fr,auto] gap-5 h-full">
@@ -90,7 +127,7 @@ const Tablero = () => {
             {tablero.map((cell, index) => (
               <div
                 key={index}
-                onClick={() => handleCellClick(index)}
+                onClick={() => (bloqueo ? handleCellClick(index) : null)}
                 className={`bg-no-repeat bg-center bg-contain bg-dark-blue w-auto h-auto 
                 ${cell === "x" ? "bg-[url('/x.png')]" : ""} 
                 ${cell === "o" ? "bg-[url('/o.png')]" : ""}`}
@@ -135,12 +172,16 @@ const Tablero = () => {
         <div className="bg-Brown-Titulo h-16 text-white font-bold text-xl flex items-center pl-7">
           Deafmute
         </div>
-        <div className="overflow-y-auto max-h-98">
+        <div className="overflow-y-auto h-[calc(100vh-15rem)]">
           <ul>
             {mensajes.map((mensaje, index) => (
               <li
                 key={index}
-                className="p-2 m-5 bg-Rose-Send rounded text-white text-xl table ml-auto"
+                className={`p-2 px-4 m-5 rounded text-white text-xl table ${
+                  mensaje.from === "Me"
+                    ? "bg-Rose-Send ml-auto"
+                    : "bg-Rose-Recive mr-auto"
+                }`}
               >
                 {mensaje.body}
               </li>
@@ -152,7 +193,8 @@ const Tablero = () => {
             <input
               type="text"
               onChange={(e) => setMensaje(e.target.value)}
-              className="h-4/6 w-full mx-2 my-2 text-xl"
+              className="h-4/6 w-full mx-2 my-2 text-xl p-2"
+              value={mensaje}
             />
             <button type="submit" onClick={enviarMensaje}>
               <img
