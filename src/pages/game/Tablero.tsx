@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Socket } from "socket.io-client";
-import { DefaultEventsMap } from "@socket.io/component-emitter";
+// import { Socket } from "socket.io-client";
+// import { DefaultEventsMap } from "@socket.io/component-emitter";
+import socket from "../../utils/socket";
 
 type TMensaje = {
   body: string;
   from: string;
 };
 
-type appProps = {
+/*type appProps = {
   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-};
+};*/
 
-const Tablero = ({ socket }: appProps) => {
+const Tablero = (/*{ socket }: appProps*/) => {
   const [isOn, setIsOn] = useState(false);
   const [tablero, setTablero] = useState(Array(9).fill(""));
   const [isXTurn, setIsXTurn] = useState(true);
@@ -116,7 +117,7 @@ const Tablero = ({ socket }: appProps) => {
       <div className="bg-Brown p-4 col-span-2 grid grid-cols-2 grid-rows-[auto,1fr,auto] gap-5 h-full">
         <div className="text-xl text-white font-bold flex">
           <img className="h-8" src="usuario.png" alt="" />
-          <h2 className="px-2">Nombre Uno</h2>
+          <h2 className="px-2">{localStorage.getItem("user")}</h2>
           <img src="o.png" alt="" className="h-8" />
         </div>
         <div className="text-2xl text-white font-bold text-right">1/4</div>

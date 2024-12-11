@@ -1,13 +1,33 @@
 import { useNavigate } from "react-router-dom";
+import { ICredentials } from "../../interfaces/IUsers";
+import { useEffect, useState } from "react";
+import socket from "../../utils/socket";
+import { IResponse } from "../../interfaces/IResponse";
 function Login() {
-
-
+  const initialValue: ICredentials = { nickname: "", password: "" }
+  const [credential, setCredential] = useState<ICredentials>(initialValue);
   const navigate = useNavigate();
 
-  const handleSubmit = (e:any) => {
+  useEffect(() => {
+    socket.on("loginRespuesta", (data: IResponse) => {
+      console.log("credential",credential);
+      if (data.success) {
+        navigate("/tictactue");
+      }
+    });
+  }, [])
+
+  const handleSubmit = (e: any) => {
     e.preventDefault();
-    navigate("/tictactue");
+    socket.emit("login", credential);
+    localStorage.setItem("user",credential.nickname)
   };
+
+  const handleOnChange = (e: any) => {
+    const newFormData: any = { ...credential };
+    newFormData[e.name] = e.value;
+    setCredential(newFormData)
+  }
 
   return (
     <div className="h-screen  flex items-center justify-center">
@@ -17,14 +37,18 @@ function Login() {
           <div className="mb-4">
             <input
               type="text"
+              name="nickname"
               placeholder="Usuario"
+              onChange={(e: any) => handleOnChange(e.target)}
               className="w-full px-4 py-2 bg-gray-200 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
           <div className="mb-4">
             <input
               type="password"
+              name="password"
               placeholder="Contraseña"
+              onChange={(e: any) => handleOnChange(e.target)}
               className="w-full px-4 py-2 bg-gray-200 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
