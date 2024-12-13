@@ -12,7 +12,7 @@ function Login() {
     socket.on("loginRespuesta", (data: IResponse) => {
       console.log("credential",credential);
       if (data.success) {
-        navigate("/tictactue");
+        navigate("/home");
       }
     });
   }, [])

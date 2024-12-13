@@ -117,7 +117,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
       <div className="bg-Brown p-4 col-span-2 grid grid-cols-2 grid-rows-[auto,1fr,auto] gap-5 h-full">
         <div className="text-xl text-white font-bold flex">
           <img className="h-8" src="usuario.png" alt="" />
-          <h2 className="px-2">{localStorage.getItem("user")}</h2>
+          <h2 className="px-2">{localStorage.getItem("userContrincante")}</h2>
           <img src="o.png" alt="" className="h-8" />
         </div>
         <div className="text-2xl text-white font-bold text-right">1/4</div>
@@ -163,7 +163,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
         <div className="text-2xl text-white font-bold flex items-end">1/4</div>
         <div className="text-xl text-white font-bold text-right flex justify-end items-end">
           <img src="x.png" alt="" className="h-8" />
-          <h2 className="px-2">Nombre Dos</h2>
+          <h2 className="px-2">{localStorage.getItem("user")}</h2>
           <img src="usuario.png" alt="" className="h-8" />
         </div>
       </div>
@@ -171,7 +171,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
       {/* Chat */}
       <div className="bg-Brown bg-opacity-85 h-full grid grid-rows-[auto,1fr,auto]">
         <div className="bg-Brown-Titulo h-16 text-white font-bold text-xl flex items-center pl-7">
-          Deafmute
+        {localStorage.getItem("userContrincante")}
         </div>
         <div className="overflow-y-auto h-[calc(100vh-15rem)]">
           <ul>
