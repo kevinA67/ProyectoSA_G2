@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import socket from "../../utils/socket";
 import { IResponse } from "../../interfaces/IResponse";
 function Login() {
+  localStorage.removeItem("user")
+  localStorage.removeItem("userContrincante")
   const initialValue: ICredentials = { nickname: "", password: "" }
   const [credential, setCredential] = useState<ICredentials>(initialValue);
   const navigate = useNavigate();
 
   useEffect(() => {
+    
     socket.on("loginRespuesta", (data: IResponse) => {
       if (data.success) {
         navigate("/home");

@@ -128,14 +128,20 @@ function Home() {
 
     socket.emit("getUserPlaying");
     socket.on("getUserPlayingResp", (data: any) => {
+      console.log("Usuario en juego")
       setUsuarioPlaying(data.data);
       setUsuarios((prevUsuarios) =>
         prevUsuarios.filter((user) => user.nickname !== data.nickname)
       );
     });
 
-    console.log("usuario logueado: ", localStorage.getItem("user"))
-    socket.emit("noPlaying", localStorage.getItem("user"));
+    socket.emit("noPlaying", localStorage.getItem("user"), localStorage.getItem("userContrincante"));
+
+
+    socket.on("usuario_desconectado", (response) => {
+      console.log("Se desconecto: ", response.codigo_usuario)
+      socket.emit("getUserConectados");
+    });
 
     return () => {
       socket.off("getUsuarios");
@@ -144,6 +150,7 @@ function Home() {
       socket.off("confirmacionDeDesafios");
       socket.off("getUserOnlineResp");
       socket.off("getUserPlayingResp");
+      socket.off("disconnect");
     };
   }, []);
 
@@ -184,6 +191,7 @@ function Home() {
 
   const handleAceptarDesafio = () => {
     socket.emit("confirmarDesafio", true, localStorage.getItem("user"), nickName);
+    socket.emit("getUserPlaying");
   }
 
   console.log("usuariosPlaying: ",usuariosPlaying)

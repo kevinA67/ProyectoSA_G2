@@ -32,6 +32,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
   const [mensajeFinal, setMensajeFinal] = useState(""); // Controla el mensaje (Ganaste/Perdiste)
   const [showConfetti, setShowConfetti] = useState(false);
   const [numPartida, setNumPartida] = useState(1);
+  const [usuarioDesconectado, setUsuarioDesconectado] = useState(false);
   // const [resultado, setResultado] = useState<IStatistics>(resultValue)
   const navigate = useNavigate();
   useEffect(() => {
@@ -78,9 +79,17 @@ const Tablero = (/*{ socket }: appProps*/) => {
       }
     });
 
+    socket.on("usuario_desconectado", (response) => {
+      if (response.codigo_usuario === localStorage.getItem("userContrincante")) {
+        setUsuarioDesconectado(true);
+      }
+      console.log("response", response)
+    });
+
     return () => {
       socket.off("tableroCliente");
       socket.off("mensajeCliente");
+      socket.off("disconnect");
     };
   }, []);
 
@@ -175,7 +184,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
   const replay = () => {
     socket.emit("volver_a_jugar", localStorage.getItem("userContrincante"));
   }
-  
+
   const exitGame = () => {
     socket.emit("terminarPartida", localStorage.getItem("userContrincante"));
   }
@@ -198,7 +207,25 @@ const Tablero = (/*{ socket }: appProps*/) => {
               </button>
               <button
                 className="bg-red-500 text-white py-2 px-4 rounded-lg"
-              onClick={()=> exitGame()}
+                onClick={() => exitGame()}
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {usuarioDesconectado && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-gray-800 text-white p-6 rounded-lg w-96">
+            <p className="font-semibold text-lg">
+              ¡Oh no! al parecer {localStorage.getItem("userContrincante")} se ha desconectado 😞
+            </p>
+            <div className="mt-4 flex justify-between">
+              <button
+                className="bg-red-500 text-white py-2 px-4 rounded-lg"
+                onClick={() => exitGame()}
               >
                 Salir
               </button>
