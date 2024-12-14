@@ -134,6 +134,9 @@ function Home() {
       );
     });
 
+    console.log("usuario logueado: ", localStorage.getItem("user"))
+    socket.emit("noPlaying", localStorage.getItem("user"));
+
     return () => {
       socket.off("getUsuarios");
       socket.off("statisticsResponse");
@@ -143,6 +146,7 @@ function Home() {
       socket.off("getUserPlayingResp");
     };
   }, []);
+
   const victories = totals?.victories || 0;
   const defeats = totals?.defeats || 0;
   const matches = totals?.matches || 0;
@@ -182,6 +186,7 @@ function Home() {
     socket.emit("confirmarDesafio", true, localStorage.getItem("user"), nickName);
   }
 
+  console.log("usuariosPlaying: ",usuariosPlaying)
 
   return (
     <div className="h-screen bg-bgDefault text-white p-6 flex flex-row items-start gap-6">
@@ -237,24 +242,29 @@ function Home() {
               <div key={user.id} className="bg-gray-900 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
+                    <span
+                      className={`mr-4 w-4 h-4 rounded-full border-2 border-white ${usuariosPlaying?.includes(user.nickname) ? "bg-red-500" : usuariosOnline?.includes(user.nickname) ? "bg-green-500" : "bg-gray-500"
+                        }`}
+                    ></span>
+
                     <img
                       src="https://via.placeholder.com/40"
                       alt="perfil"
                       className="rounded-full border-2 border-white"
                     />
                     <div className="ml-2">
-                      <p className="font-semibold text-white">{user.name}</p>
+                      <p className="font-semibold text-white">{user.name} {user.nickname}</p>
                       <p className="text-sm text-green-400">Victorias: {user.victories}</p>
                     </div>
                   </div>
                   {usuariosOnline?.includes(user.nickname) &&
-                      <button
-                        className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-                        onClick={!usuariosPlaying?.includes(user.nickname) ? () => handleChallengeClick(user.name, user.nickname) : undefined} // Enviar nombre del amigo
-                      >
-                        {usuariosPlaying?.includes(user.nickname) ? 'Jugando...' : 'Desafiar'}
-                      </button>
-                    }
+                    <button
+                      className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                      onClick={!usuariosPlaying?.includes(user.nickname) ? () => handleChallengeClick(user.name, user.nickname) : undefined} // Enviar nombre del amigo
+                    >
+                      {usuariosPlaying?.includes(user.nickname) ? 'Jugando...' : 'Desafiar'}
+                    </button>
+                  }
                 </div>
               </div>
             ))}
