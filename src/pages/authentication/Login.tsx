@@ -10,7 +10,6 @@ function Login() {
 
   useEffect(() => {
     socket.on("loginRespuesta", (data: IResponse) => {
-      console.log("credential",credential);
       if (data.success) {
         navigate("/home");
       }

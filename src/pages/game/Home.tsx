@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import socket from "../../utils/socket";
-
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import socket from '../../utils/socket';
+import { IResEstatistics } from '../../interfaces/IResponse';
+import { IStatistics } from '../../interfaces/IStatistics';
 type TUsuario = {
   id: number;
   name: string;
@@ -15,13 +16,12 @@ function Home() {
   const [challengingUser, setChallengingUser] = useState<string | null>(null);
   const [nickName, setNickName] = useState<string | null>(null);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
-  const [showFinalAlert, setShowFinalAlert] = useState<
-    "accept" | "reject" | null
-  >(null);
+  const [showFinalAlert, setShowFinalAlert] = useState<"accept" | "reject" | null>(null);
   const [usuarios, setUsuarios] = useState<TUsuario[]>([]);
-  const navigate = useNavigate();
   const [showModalDesafio, setShowModalDesafio] = useState(false)
   const [usuarioDesafia, setUsuarioDesafia] = useState('')
+  const [totals, setTotals] = useState<IStatistics>();
+  const navigate = useNavigate();
 
   const handleChallengeClick = (userName: string, nickName: string) => {
     setChallengingUser(userName);
@@ -30,25 +30,24 @@ function Home() {
   };
 
   const handleAcceptChallenge = () => {
-    localStorage.setItem("userContrincante",nickName!)
+    localStorage.setItem("userContrincante", nickName!)
     socket.emit("desafiar", localStorage.getItem("user"), nickName);
-
     setShowChallengeAlert(false);
     setWaitingForResponse(true);
 
-    // // SIlular que esperamos a otro jugador
+    // SIlular que esperamos a otro jugador
     // setTimeout(() => {
     //   setWaitingForResponse(false);
-    //   setShowFinalAlert("accept"); //alerta de aceptación
+    //   setShowFinalAlert('accept'); //alerta de aceptación
     //   setTimeout(() => {
-    //     navigate("/tictactue"); // Redirigir
+    //     navigate('/tictactue'); // Redirigir
     //   }, 3000);
     // }, 3000);
   };
 
   const handleRejectChallenge = () => {
     setShowChallengeAlert(false);
-    //setShowFinalAlert("reject"); //alerta de rechazo
+    //setShowFinalAlert('reject'); //alerta de rechazo
   };
 
   useEffect(() => {
@@ -60,7 +59,7 @@ function Home() {
 
     socket.on("recibirDesafios", (response) => {
       setUsuarioDesafia(response.data)
-      localStorage.setItem("userContrincante",response.data)
+      localStorage.setItem("userContrincante", response.data)
       setNickName(response.data)
       setShowModalDesafio(true)
       console.log(response);
@@ -69,14 +68,23 @@ function Home() {
     socket.on("confirmacionDeDesafios", (response) => {
       console.log(response)
       setWaitingForResponse(false);
-      if(response.data === true){
+      if (response.data === true) {
         console.log("Aceptado")
         setShowFinalAlert("accept"); //alerta de aceptación
         navigate("/tictactue");
-      }else if(response.data === false){
+      } else if (response.data === false) {
         console.log("Rechazado")
         setShowFinalAlert("reject"); //alerta de aceptación
       }
+    });
+
+    socket.emit("getStatistics", localStorage.getItem("user"));
+    socket.on("statisticsResponse", (data: IResEstatistics) => {
+      console.log(data);
+      if (data.success) {
+        setTotals(data.data);
+      }
+
     });
 
     return () => {
@@ -91,35 +99,33 @@ function Home() {
     socket.emit("confirmarDesafio", false, localStorage.getItem("user"), nickName);
     console.log('object')
   }
-  
+
   const handleAceptarDesafio = () => {
     socket.emit("confirmarDesafio", true, localStorage.getItem("user"), nickName);
   }
-  
+
 
   return (
     <div className="h-screen bg-bgDefault text-white p-6 flex flex-col items-center">
       {/* Caja de estadísticas */}
       <div className="bg-black bg-opacity-80 text-white p-6 rounded-lg shadow-lg w-full max-w-4xl mb-8">
-        <h1 className="text-2xl font-bold text-center mb-4">
-          Estadísticas del Jugador
-        </h1>
+        <h1 className="text-2xl font-bold text-center mb-4">Estadísticas del Jugador</h1>
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
             <p className="font-semibold">Partidas Jugadas:</p>
-            <p>100</p>
+            <p>{totals?.score}</p>
           </div>
           <div>
             <p className="font-semibold text-red-600">Perdidas:</p>
-            <p>30</p>
+            <p>{totals?.defeats}</p>
           </div>
           <div>
             <p className="font-semibold">Empates:</p>
-            <p>20</p>
+            <p>{totals?.matches}</p>
           </div>
           <div>
             <p className="font-semibold text-green-500">Victorias:</p>
-            <p>50</p>
+            <p>{totals?.victories}</p>
           </div>
         </div>
 
