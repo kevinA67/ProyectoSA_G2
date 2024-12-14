@@ -23,12 +23,20 @@ const Tablero = (/*{ socket }: appProps*/) => {
 
   useEffect(() => {
     socket.on("tableroCliente", (response) => {
+      console.log(localStorage.getItem("userContrincante")) 
       const { data, turno } = response;
       console.log('data',data)
       setEnviar(false);
-      setTablero(data);
+
+      const tableroInvertido = data.map((celda:string) => {
+        if (celda === "x") return "o";
+        if (celda === "o") return "x";
+        return celda; // Si no es "x" ni "o", se deja igual.
+      });
+      setTablero(tableroInvertido);
       setBloqueo(true);
       setIsXTurn(!turno);
+      setIsOn(true);
     });
 
     socket.on("mensajeCliente", (data: string) => {
@@ -48,7 +56,9 @@ const Tablero = (/*{ socket }: appProps*/) => {
 
   useEffect(() => {
     if (enviar) {
-      socket.emit("tableroServidor",  { tablero, isXTurn });
+      const userContrincante = localStorage.getItem("userContrincante");
+      setIsOn(false);
+      socket.emit("tableroServidor",  { tablero, isXTurn, userContrincante });
       setBloqueo(!bloqueo);
     }
   }, [tablero]);
@@ -57,7 +67,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
     if (tablero[index] !== "") return;
     console.log('sd',tablero[index])
     const newTablero = [...tablero];
-    newTablero[index] = isXTurn ? "x" : "o"; // Asigna "x" o "o" según el turno
+    newTablero[index] = "x"; // Asigna "x" o "o" según el turno
     setTablero(newTablero);
     setIsOn(!isOn);
     setEnviar(true);
@@ -93,9 +103,9 @@ const Tablero = (/*{ socket }: appProps*/) => {
 
   //console.log(validarGanador);
 
-  const toggleSwitch = () => {
-    setIsOn(!isOn);
-  };
+  // const toggleSwitch = () => {
+  //   setIsOn(!isOn);
+  // };
 
   const enviarMensaje = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -107,7 +117,9 @@ const Tablero = (/*{ socket }: appProps*/) => {
         from: "Me",
       };
       setMensajes([...mensajes, newMessaje]);
-      socket.emit("mensaje", newMessaje.body);
+      const userContrincante = localStorage.getItem("userContrincante");
+      const newMessage = newMessaje.body;
+      socket.emit("mensaje", {newMessage, userContrincante});
       setMensaje("");
     }
   };
@@ -141,8 +153,9 @@ const Tablero = (/*{ socket }: appProps*/) => {
               <input
                 type="checkbox"
                 className="hidden peer"
-                checked={isOn}
-                onChange={toggleSwitch}
+                defaultChecked={isOn}
+                //checked={isOn}
+                //onChange={toggleSwitch}
               />
 
               <div className="relative">
