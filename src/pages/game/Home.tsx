@@ -8,6 +8,7 @@ type TUsuario = {
   name: string;
   nickname: string;
   status: number;
+  victories:number;
 };
 
 function Home() {
@@ -162,7 +163,7 @@ function Home() {
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {usuarios.map((user) => (
+          {usuarios.filter(x=> x.nickname !== localStorage.getItem("user")).map((user) => (
             <div key={user.id} className="bg-gray-900 p-4 rounded-lg">
               <div className="flex items-center relative">
                 <img
@@ -173,7 +174,7 @@ function Home() {
                 <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
                 <div className="ml-2">
                   <p className="font-semibold text-white">{user.name}</p>
-                  <p className="text-sm text-green-400">Victorias: {5}</p>
+                  <p className="text-sm text-green-400">Victorias: {user.victories}</p>
                 </div>
               </div>
               <button
