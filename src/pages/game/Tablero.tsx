@@ -20,15 +20,17 @@ const Tablero = (/*{ socket }: appProps*/) => {
   const [mensaje, setMensaje] = useState("");
   const [enviar, setEnviar] = useState(false);
   const [bloqueo, setBloqueo] = useState(true);
+  const [mensajeAlerta, setMensajeAlerta] = useState("");
+  const [ColorAlert, setColorAlert]= useState("");
 
   useEffect(() => {
     socket.on("tableroCliente", (response) => {
-      console.log(localStorage.getItem("userContrincante")) 
+      console.log(localStorage.getItem("userContrincante"))
       const { data, turno } = response;
-      console.log('data',data)
+      console.log('data', data)
       setEnviar(false);
 
-      const tableroInvertido = data.map((celda:string) => {
+      const tableroInvertido = data.map((celda: string) => {
         if (celda === "x") return "o";
         if (celda === "o") return "x";
         return celda; // Si no es "x" ni "o", se deja igual.
@@ -58,14 +60,14 @@ const Tablero = (/*{ socket }: appProps*/) => {
     if (enviar) {
       const userContrincante = localStorage.getItem("userContrincante");
       setIsOn(false);
-      socket.emit("tableroServidor",  { tablero, isXTurn, userContrincante });
+      socket.emit("tableroServidor", { tablero, isXTurn, userContrincante });
       setBloqueo(!bloqueo);
     }
   }, [tablero]);
 
   const handleCellClick = (index: number) => {
     if (tablero[index] !== "") return;
-    console.log('sd',tablero[index])
+    console.log('sd', tablero[index])
     const newTablero = [...tablero];
     newTablero[index] = "x"; // Asigna "x" o "o" según el turno
     setTablero(newTablero);
@@ -91,11 +93,33 @@ const Tablero = (/*{ socket }: appProps*/) => {
     for (const combinacion of combinacionesGanadoras) {
       const [a, b, c] = combinacion;
       if (
-        tablero[a] !== "" && 
+        tablero[a] !== "" &&
         tablero[a] === tablero[b] &&
         tablero[a] === tablero[c]
       ) {
         console.log("Ganador:", tablero[a]);
+        if (tablero[a].toUpperCase() === 'X') {
+          setMensajeAlerta("Ganaste")
+          setColorAlert("green")
+
+        } else if (tablero[a].toUpperCase() === 'O') {
+          setMensajeAlerta("Perdiste")
+          setColorAlert("red")
+        }
+
+
+        {
+          mensajeAlerta && (
+            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white p-4 rounded shadow-lg text-center">
+                <h2 className="text-2xl font-bold">{mensajeAlerta}</h2>
+              </div>
+            </div>
+          )
+        }
+
+
+
         return tablero[a];
       }
     }
@@ -119,7 +143,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
       setMensajes([...mensajes, newMessaje]);
       const userContrincante = localStorage.getItem("userContrincante");
       const newMessage = newMessaje.body;
-      socket.emit("mensaje", {newMessage, userContrincante});
+      socket.emit("mensaje", { newMessage, userContrincante });
       setMensaje("");
     }
   };
@@ -154,8 +178,8 @@ const Tablero = (/*{ socket }: appProps*/) => {
                 type="checkbox"
                 className="hidden peer"
                 defaultChecked={isOn}
-                //checked={isOn}
-                //onChange={toggleSwitch}
+              //checked={isOn}
+              //onChange={toggleSwitch}
               />
 
               <div className="relative">
@@ -163,8 +187,7 @@ const Tablero = (/*{ socket }: appProps*/) => {
 
                 <div
                   className={`flex justify-center items-center text-Brown font-bold shadow-xl 
-                    absolute top-0 left-0 w-24 h-20 bg-Yellow-Switch rounded-full transform transition-transform duration-300 ${
-                      isOn ? "translate-y-24" : "bg-yellow-400"
+                    absolute top-0 left-0 w-24 h-20 bg-Yellow-Switch rounded-full transform transition-transform duration-300 ${isOn ? "translate-y-24" : "bg-yellow-400"
                     }`}
                 >
                   {isOn ? "Tu turno" : "Su turno"}
@@ -184,18 +207,17 @@ const Tablero = (/*{ socket }: appProps*/) => {
       {/* Chat */}
       <div className="bg-Brown bg-opacity-85 h-full grid grid-rows-[auto,1fr,auto]">
         <div className="bg-Brown-Titulo h-16 text-white font-bold text-xl flex items-center pl-7">
-        {localStorage.getItem("userContrincante")}
+          {localStorage.getItem("userContrincante")}
         </div>
         <div className="overflow-y-auto h-[calc(100vh-15rem)]">
           <ul>
             {mensajes.map((mensaje, index) => (
               <li
                 key={index}
-                className={`p-2 px-4 m-5 rounded text-white text-xl table ${
-                  mensaje.from === "Me"
-                    ? "bg-Rose-Send ml-auto"
-                    : "bg-Rose-Recive mr-auto"
-                }`}
+                className={`p-2 px-4 m-5 rounded text-white text-xl table ${mensaje.from === "Me"
+                  ? "bg-Rose-Send ml-auto"
+                  : "bg-Rose-Recive mr-auto"
+                  }`}
               >
                 {mensaje.body}
               </li>

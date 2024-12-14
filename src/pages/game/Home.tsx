@@ -50,6 +50,8 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [usuarios, setUsuarios] = useState<TUsuario[]>([]);
   const [totals, setTotals] = useState<IStatistics>();
+  const [usuariosOnline, setUsuarioOnline] = useState<any[]>();
+  const [usuariosPlaying, setUsuarioPlaying] = useState<any[]>();
 
   useEffect(() => {
     socket.emit("get_usuarios");
@@ -65,9 +67,30 @@ function Home() {
       }
     });
 
+
+    socket.emit("getUserConectados");
+    socket.on("getUserOnlineResp", (data: any) => {
+      setUsuarioOnline(data.data);
+      setUsuarios((prevUsuarios) =>
+        prevUsuarios.filter((user) => user.nickname !== data.nickname)
+      );
+    });
+
+    socket.emit("getUserPlaying");
+    socket.on("getUserPlayingResp", (data: any) => {
+      setUsuarioPlaying(data.data);
+      setUsuarios((prevUsuarios) =>
+        prevUsuarios.filter((user) => user.nickname !== data.nickname)
+      );
+    });
+
+
     return () => {
       socket.off("getUsuarios");
       socket.off("statisticsResponse");
+      socket.off("getUserOnlineResp");
+      socket.off("getUserPlayingResp");
+
     };
   }, []);
 
@@ -160,22 +183,35 @@ function Home() {
                 <div key={user.id} className="bg-gray-900 p-4 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
+                      <span
+                        className={`mr-4 w-3 h-3 rounded-full border-2 border-white ${usuariosOnline?.includes(user.nickname) ? "bg-green-500" : "bg-gray-500"
+                          }`}
+                      ></span>
+                      <br></br>
                       <img
                         src="https://via.placeholder.com/40"
                         alt="perfil"
                         className="rounded-full border-2 border-white"
                       />
+
                       <div className="ml-2">
-                        <p className="font-semibold text-white">{user.name}</p>
+                        <p className="font-semibold text-white flex items-center">
+
+                          {user.name}
+
+                        </p>
                         <p className="text-sm text-green-400">Victorias: {user.victories}</p>
                       </div>
                     </div>
-                    <button
-                      className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-                      onClick={() => socket.emit("challengeUser", user.id)}
-                    >
-                      Desafiar
-                    </button>
+                    {usuariosOnline?.includes(user.nickname) &&
+                      <button
+                        className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                        onClick={!usuariosPlaying?.includes(user.nickname) ? () => socket.emit("challengeUser", user.id) : undefined} // Enviar nombre del amigo
+                      >
+                        {usuariosPlaying?.includes(user.nickname) ? 'Jugando...' : 'Desafiar'}
+                      </button>
+                    }
+
                   </div>
                 </div>
               ))}
